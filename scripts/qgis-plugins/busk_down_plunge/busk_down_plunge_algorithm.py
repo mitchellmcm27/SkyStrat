@@ -72,7 +72,7 @@ from qgis.core import (
     QgsProcessingParameterRasterLayer,
     QgsWkbTypes,
 )
-from qgis.PyQt.QtCore import QVariant
+from qgis.PyQt.QtCore import (QCoreApplication, QVariant)
 
 gdal.UseExceptions()
 
@@ -520,7 +520,7 @@ class BuskDownPlungeAlgorithm(QgsProcessingAlgorithm):
 
     def check_utm_projection(self, crs, dataset_name, feedback):
         """Raise an error if CRS is geographic; warn if not UTM."""
-        if not crs.isProjected():
+        if crs.isGeographic():
             raise QgsProcessingException(
                 f'{dataset_name} must be in a projected coordinate system (UTM required)'
             )
