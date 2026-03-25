@@ -3,6 +3,8 @@
 Installing a local plugin requires copying the files to the QGIS `python\plugins` directory.
 The easist way to develop a plugin is to create a symlink, which allows changes to be automatically synced to the correct directory without manually copying files.
 
+After copying or symlinking, enable the "SkyStrat" plugin in this QGIS plugins manager, and then visit the "SkyStrat" processing toolbox.
+
 ## Windows
 
 cmd prompt (run as Admin):
@@ -20,3 +22,4 @@ New-Item -ItemType SymbolicLink -Path "C:\Users\<username>\AppData\Roaming\QGIS\
 ## Mac (TODO)
 
 ## Linux (TODO)
+
