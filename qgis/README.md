@@ -1,0 +1,1 @@
+# SkyStrat QGIS plugin
