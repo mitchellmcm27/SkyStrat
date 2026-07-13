@@ -13,17 +13,17 @@ To download a release from this page, go to [Releases](https://github.com/mitche
 
 SkyStrat User Guide.pdf - a more detailed description of what each of the tools do, their inputs and outputs, etc.
 
-BuskMethod.mp4 - a demonstration video showing use of the BuskMethod tool for mapping stratigraphic height in ArcGIS Pro
+BuskMethod.mp4 - a demonstration video showing use of the BuskMethod tool for mapping stratigraphic height in ArcGIS Pro.
 
-threepointproblemtoolbox.mp4 - a demonstration video showing use of the ThreePointProblem tool for calculating strikes and dips from digital topography in ArcGIS Pro
+threepointproblemtoolbox.mp4 - a demonstration video showing use of the ThreePointProblem tool for calculating strikes and dips from digital topography in ArcGIS Pro.
 
 README.md - this file.
 
 The subfolders include:
 
-arc/ - folder with the files to run the algorithms in ArcGIS Pro
+arc/ - folder with the files to run the algorithms in ArcGIS Pro.
 
-qgis/ - folder with the files to run the algorithms in QGIS
+qgis/ - folder with the files to run the algorithms in QGIS.
 
 example_data/ - folder with example files showing input and output of the tool, created in ArcGIS Pro. The provided input files can be used with the scripts to replicate the provided output examples.
 
