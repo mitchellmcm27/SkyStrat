@@ -2,6 +2,14 @@
 
 ### Alex Tye, 5/29/2026
 
+### Description
+
+The files in this folder are a demonstration dataset that show the use of the SkyStrat tool, which uses the Busk (1929) cross section construction method to calculate and map stratigraphic height across a landscape. The files include a GeoDataBase (.gdb) file inside a zip folder, which contains three vector datasets for the example problem, a polygon of the study area and a set of strike and dip measurements, which are both required inputs for the tool. Also contained is a copy of the strike and dip measurement vector dataset that has stratigraphic height calculated and listed for each strike and dip measurement station, which is an optional output from the script.
+
+In addition to the vector datasets, a second zip folder contains three raster files (GeoTiff) for the example problem. A digital elevation model (DEM) is included, which is a required input. Also shown are two output rasters, one of which shows the identity of the wedge or circle sector that each DEM point was assigned to in the analysis, and the second is a raster of stratigraphic height calculated using the tool. Finally, a PDF is included which is a figure created and output by the tool.
+
+If the user runs the `BuskMethod` tool using the files marked INPUT, an output that is identical to those marked OUTPUT should be created.
+
 ### Contents
 
 The files are housed within two .zip files:
