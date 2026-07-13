@@ -10,15 +10,15 @@ For more information, see the provided video tutorials.
 Download an archive from the [Releases](https://github.com/mitchellmcm27/SkyStrat/releases), or clone this repository. 
 
 To download a release from this page, go to [Releases](https://github.com/mitchellmcm27/SkyStrat/releases), go to the latest version, click the arrow next to Assets, and click the source code in your preferred format to download. Then, unzip. There are several files in the main folder and three subfolders. The files in the main folder include:
-+SkyStrat User Guide.pdf - a more detailed description of what each of the tools do, their inputs and outputs, etc.
-+BuskMethod.mp4 - a demonstration video showing use of the BuskMethod tool for mapping stratigraphic height in ArcGIS Pro.
-+threepointproblemtoolbox.mp4 - a demonstration video showing use of the ThreePointProblem tool for calculating strikes and dips from digital topography in ArcGIS Pro.
-+README.md - this file.
++SkyStrat User Guide.pdf - a more detailed description of what each of the tools do, their inputs and outputs, etc.\
++BuskMethod.mp4 - a demonstration video showing use of the BuskMethod tool for mapping stratigraphic height in ArcGIS Pro.\
++threepointproblemtoolbox.mp4 - a demonstration video showing use of the ThreePointProblem tool for calculating strikes and dips from digital topography in ArcGIS Pro.\
++README.md - this file.\
 
 The subfolders include:
-+arc/ - folder with the files to run the algorithms in ArcGIS Pro.
-+qgis/ - folder with the files to run the algorithms in QGIS.
-+example_data/ - folder with example files showing input and output of the tool, created in ArcGIS Pro. The provided input files can be used with the scripts to replicate the provided output examples.
++arc/ - folder with the files to run the algorithms in ArcGIS Pro.\
++qgis/ - folder with the files to run the algorithms in QGIS.\
++example_data/ - folder with example files showing input and output of the tool, created in ArcGIS Pro. The provided input files can be used with the scripts to replicate the provided output examples.\
 
 
 Use the instructions below to install.
