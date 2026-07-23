@@ -23,7 +23,7 @@ The subfolders include:
 + example_data/ - folder with example files showing input and output of the tool, created in ArcGIS Pro. The provided input files can be used with the scripts to replicate the provided output examples.
 
 
-Use the instructions below to install.
+Use the instructions below to install. Note, the ArcGIS Pro and QGIS versions are alternatives to one another with (approximately) the same functionality. Use whichever one you prefer.
 
 ## Arc GIS Plugin installation
 
