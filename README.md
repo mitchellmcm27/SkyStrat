@@ -51,11 +51,23 @@ To uninstall, delete the `SkyStrat` symlink in the **QGIS3/profiles/default/pyth
 
 ## Interpreting the Results
 
-The ArcGIS Pro version of the script generates four outputs.
+The ArcGIS Pro version of the script generates four outputs. Note that in the images below, some of the strike and dip measurements have been modified for testing purposes and do not actually represent the real strike/dips for bedding across the area shown.
 
 The first output (below) is a plot showing the downplunge projection. This is a PDF, not an ArcGIS Pro file. The fold trend and plunge is shown in the top corner. The plot itself is the profile plane of the fold, with the vertical axis oriented in the same direction as up in physical space projected onto the profile plane. The red circles shown are the measurement locations. They are labeled based on the label field the user selected when running the script. The blue lines are the bedding orientations projected onto the profile plane. The short yellow lines are the stratigraphic up vector. The dashed lines and large black dots are the boundaries and centers, respectively of the circle sectors ("wedges") that are implied by the bedding orientations using the Busk (1929) cross section method. The green lines show that two adjacent measurements are parallel, so the stratigraphic height between them is calculated using a rectangular, rather than circular, geometry with a single bedding plane characterizing the entire rectangle and differences in stratigraphic height being based on position perpendicular to the bedding plane. The colored dots are a subset of DEM grid cell centroids projected onto the profile plane, colored based on which wedge they correspond to. The dark gray dots are DEM grid cells that fall into more than one wedge so their stratigraphic height cannot be calculated unambiguously (i.e., the stratigraphic height would be slightly different depending on which wedge center point it is calculated relative to). These ambiguous DEM grid cells are flagged in the other output and stratigraphic height is not calculated for them. To remove these regions of ambiguous stratigraphic height, we recommend trial and error with the user removing some bedding plane measurements that are too close to others and lead to wedge center points near 0 vertical distance. Removing bedding plane measurements that are subparallel with others nearby will have a minimal effect on the overall stratigraphic heights calculated. 
 
 <img width="2265" height="1820" alt="image" src="https://github.com/user-attachments/assets/49a3ff8f-74de-42f5-bbd6-9420aa1b2b85" />
+
+The second output (below) is an integer raster showing which wedge each DEM point falls into across the study area. These are colored arbitrarily. The wedges are identical to those shown in the profile plane plot above. Values of 0 and higher correspond to wedges (or rectangles) shown in the profile plane. Values of -1 are DEM grid cells whose centroids are beyond either the leftmost or rightmost wedge in the profile plane and thus are outside the bounds of the area where stratigraphic height can be calculated based on the Busk (1929) cross section method. If you desire additional coverage beyond the ends of the dataset, more bedding plane measurements are needed. Values of -2 are DEM grid cells whose centroids fall into more than one wedge and, therefore, for which stratigraphic height cannot be calculated unambiguously (see discussion above). Areas that have values of -1 and -2 will be excluded from the associated stratigraphic height map.
+
+<img width="2135" height="780" alt="image" src="https://github.com/user-attachments/assets/b2d60c4c-f0df-476c-8e79-2fc1c9a3e9aa" />
+
+The third output (below) is a feature class that is identical to your input strike/dip feature class except with an added field that shows the stratigraphic height calculated for each measurement location.
+
+<img width="1540" height="652" alt="image" src="https://github.com/user-attachments/assets/95043c56-bf12-458d-a536-f8c948e210e3" />
+
+The fourth output (below) is a floating point raster with stratigraphic height values calculated across the DEM. In this case, the stratigraphic height raster is slightly transparent. The missing areas are either outside the bounds of the wedges or are areas located within more than one wedge. Note: this stratigraphic height raster was calculated under a different set of test measurements than the wedge assignment map above and cannot be directly compared to it.
+
+<img width="1602" height="752" alt="image" src="https://github.com/user-attachments/assets/98917bb7-3691-453c-b0e6-c352863a487c" />
 
 
 ### Windows symlink
