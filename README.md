@@ -49,6 +49,13 @@ The plugins will be available in the **Processing Toolbox** under the *SkyStrat*
 
 To uninstall, delete the `SkyStrat` symlink in the **QGIS3/profiles/default/python/plugins** folder.
 
+## Interpreting the Results
+
+The ArcGIS Pro version of the script generates four outputs.
+
+<img width="2265" height="1820" alt="image" src="https://github.com/user-attachments/assets/49a3ff8f-74de-42f5-bbd6-9420aa1b2b85" />
+
+
 ### Windows symlink
 
 cmd prompt (run as Admin):
