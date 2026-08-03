@@ -188,6 +188,8 @@ class SkyStratDownplungeView(object):
         fold_trend = parameters[8].value
         fold_plunge = parameters[9].value
         output_pdf = parameters[10].valueAsText
+        if output_pdf and not output_pdf.lower().endswith('.pdf'):
+            output_pdf = output_pdf + '.pdf'
         plot_dem_cells = parameters[11].value
         wedge_raster_output = parameters[12].valueAsText
         output_strike_dip_fc = parameters[13].valueAsText
@@ -1293,7 +1295,7 @@ class SkyStratDownplungeView(object):
                     field_scale=field.scale,
                     field_length=field.length,
                     field_alias=field.aliasName,
-                    field_is_nullable=field.isNullable
+                    field_is_nullable="NULLABLE"  # Always nullable to handle Null values in source data
                 )
         
         # Copy data from input to output
