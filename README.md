@@ -3,7 +3,7 @@
 SkyStrat is a GIS platform for mapping stratigraphic height by fitting cylindrical fold geometry to structural measurements.
 Structural measurements (strikes/dips) can be measured in the field or calculated by SkyStrat solving the three-point problem. We also provide scripts to solve the three point problem.
 
-For more information, see the provided video tutorials, as well as the description of the SkyStrat outputs below.
+For more information, see the provided video tutorials, as well as the sections on interpreting the results, below.
 
 ## Get the code
 
