@@ -69,6 +69,13 @@ The fourth output (below) is a floating point raster with stratigraphic height v
 
 <img width="1602" height="752" alt="image" src="https://github.com/user-attachments/assets/98917bb7-3691-453c-b0e6-c352863a487c" />
 
+Note that the outputs from the QGIS version are slightly different, with a similar description of them coming soon.
+
+## Improving the Results
+
+The wedges and stratigraphic height maps will only be calculated for valid bedding plane geometries such that every pair of adjacent bedding plane measurements define a valid wedge geometry. If your measurements were made with sufficient spatial density and the folding of your study area is actually cylindrical (or close to it), but your dataset produces invalid geometries and no stratigraphic height map, then we recommend you proceed via an iterative approach. Examine the profile plane plot to find areas where measurements are not producing valid wedges. Also, read the messages output by the script as it runs (click View Details in the script running window), which are informative and will state which measurements did not form a valid wedge geometry. This can sometimes occur because measurements can be much closer together on the profile plane (where they are projected onto a 2d plane) than they are in real spatial coordinates. Measurements that are close together on the profile plane but differ from one another by just a few degrees can cause problems. Use trial and error and iterate to remove some measurements that are too close together on the profile plane, keeping the measurements that are most representative of the real fold geometry. The regions in which we tested the scripts included one fold limb and areas near one or both of the adjacent hinges. The folding in the test regions was generally open, with low to moderate interlimb angles. In such conditions, something like 10 strike/dip measurements that are well distributed across the fold geometry is probably sufficient to fully characterize the geometry and calculate accurate stratigraphic heights.
+
+If you are encountering problems that you think are in error, you may have found a bug. Please contact me (contact info here: https://www.geology.pitt.edu/people/alexander-tye-phd) if you have found a bug or have questions about running the script.
 
 ### Windows symlink
 
