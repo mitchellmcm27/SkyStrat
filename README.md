@@ -77,6 +77,9 @@ The wedges and stratigraphic height maps will only be calculated for valid beddi
 
 If you are encountering problems that you think are in error, you may have found a bug. Please contact me (contact info here: https://www.geology.pitt.edu/people/alexander-tye-phd) if you have found a bug or have questions about running the script.
 
+## Known Issues
++ The ArcGIS version of the code encounters problems writing output shapefiles. To output the strike/dip measurements with stratigraphic height (the only vector dataset output by the code), outputting to a geodatabase feature class, rather than a shapefile, is recommended.
+
 ### Windows symlink
 
 cmd prompt (run as Admin):
