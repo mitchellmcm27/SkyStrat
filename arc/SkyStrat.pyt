@@ -320,13 +320,10 @@ class SkyStratDownplungeView(object):
     def read_strike_dip_data(self, fc, strike_field, dip_field, overturned_field, label_field, strat_height_field, dem_raster):
         """Read strike, dip, and location data from feature class"""
         
-        # Check if feature class is Z-enabled
-        desc = arcpy.Describe(fc)
-        has_z = desc.hasZ
-        
-        fields = ["SHAPE@X", "SHAPE@Y", strike_field, dip_field, label_field]
-        if has_z:
-            fields.insert(2, "SHAPE@Z")
+        # Build field list - use SHAPE@ (full geometry object) instead of SHAPE@X/Y/Z tokens.
+        # This lets us extract x and y manually from the geometry, completely bypassing any
+        # Z value stored in the feature class (which may be stale, zero, or from a different DEM).
+        fields = ["SHAPE@", strike_field, dip_field, label_field]
         if overturned_field:
             fields.append(overturned_field)
         if strat_height_field:
@@ -343,25 +340,12 @@ class SkyStratDownplungeView(object):
             'strat_height': []
         }
         
-        # Calculate field indices based on what's present
-        current_idx = 0
-        shape_x_idx = current_idx
-        current_idx += 1
-        shape_y_idx = current_idx
-        current_idx += 1
-        
-        if has_z:
-            z_index = current_idx
-            current_idx += 1
-        else:
-            z_index = None
-        
-        strike_index = current_idx
-        current_idx += 1
-        dip_index = current_idx
-        current_idx += 1
-        label_index = current_idx
-        current_idx += 1
+        # Calculate field indices
+        shape_idx = 0
+        strike_index = 1
+        dip_index = 2
+        label_index = 3
+        current_idx = 4
         
         if overturned_field:
             overturned_index = current_idx
@@ -377,26 +361,25 @@ class SkyStratDownplungeView(object):
         
         with arcpy.da.SearchCursor(fc, fields) as cursor:
             for row in cursor:
-                data['x'].append(row[shape_x_idx])
-                data['y'].append(row[shape_y_idx])
+                # Extract x and y from geometry centroid - this gives us only the
+                # horizontal position regardless of whether Z is enabled on the feature class
+                geom = row[shape_idx]
+                centroid = geom.centroid
+                data['x'].append(centroid.X)
+                data['y'].append(centroid.Y)
                 
-                # Get Z from feature or set to None for later extraction from DEM
-                if has_z and row[z_index] is not None:
-                    data['z'].append(row[z_index])
-                else:
-                    data['z'].append(None)
+                # Always extract Z from DEM - never trust Z stored in the feature class
+                data['z'].append(None)
                 
                 data['strike'].append(row[strike_index])
                 data['dip'].append(row[dip_index])
                 data['labels'].append(str(row[label_index]))
                 
-                # Check overturned flag
                 if overturned_field:
                     data['overturned'].append(1 if row[overturned_index] == 1 else 0)
                 else:
                     data['overturned'].append(0)
                 
-                # Get stratigraphic height if field provided
                 if strat_height_field:
                     data['strat_height'].append(row[strat_height_index])
                 else:
@@ -406,10 +389,9 @@ class SkyStratDownplungeView(object):
         for key in data:
             data[key] = np.array(data[key])
         
-        # Extract Z values from DEM where needed
-        if None in data['z']:
-            arcpy.AddMessage("  Extracting elevations from DEM...")
-            data['z'] = self.extract_z_from_dem(data['x'], data['y'], data['z'], dem_raster)
+        # Always extract Z values from DEM
+        arcpy.AddMessage("  Extracting elevations from DEM...")
+        data['z'] = self.extract_z_from_dem(data['x'], data['y'], data['z'], dem_raster)
         
         return data
     
@@ -1117,8 +1099,11 @@ class SkyStratDownplungeView(object):
         # Set spatial reference
         arcpy.management.DefineProjection(wedge_raster, dem_desc.spatialReference)
         
-        # Save the raster
-        wedge_raster.save(output_path)
+        # Save using CopyRaster to avoid geodatabase format issues
+        import os
+        if not output_path.lower().endswith('.tif') and not output_path.lower().endswith('.tiff') and '.' not in os.path.basename(output_path):
+            output_path = output_path + '.tif'
+        arcpy.management.CopyRaster(wedge_raster, output_path, format="TIFF")
     
     def calculate_stratigraphic_heights_in_profile(self, strike_dip_data, wedge_data, profile_x_coords, profile_y_coords, sorted_indices):
         """Calculate stratigraphic heights for measurements using the Busk method"""
@@ -1263,15 +1248,21 @@ class SkyStratDownplungeView(object):
         
         arcpy.AddMessage(f"  Creating output feature class: {output_fc}")
         
-        # Get input feature class properties
         desc = arcpy.Describe(input_fc)
+        input_oid_name = desc.OIDFieldName
+        label_is_oid = label_field.upper() in ['OBJECTID', 'FID'] or label_field == input_oid_name
         
-        # Parse output path
         import os
         output_path = os.path.dirname(output_fc)
         output_name = os.path.basename(output_fc)
         
-        # Create new feature class with correct alias
+        # Strip file extension if inside a geodatabase; add .shp if outside and no extension
+        if '.gdb' in output_path.lower() or '.mdb' in output_path.lower():
+            output_name = os.path.splitext(output_name)[0]
+            arcpy.AddMessage(f"  Note: Output is inside a geodatabase - file extension removed from name")
+        elif not output_name.lower().endswith('.shp') and '.' not in output_name:
+            output_name = output_name + '.shp'
+        
         arcpy.AddMessage(f"  Creating feature class with alias: {output_name}")
         arcpy.management.CreateFeatureclass(
             out_path=output_path,
@@ -1280,10 +1271,10 @@ class SkyStratDownplungeView(object):
             has_m="ENABLED" if desc.hasM else "DISABLED",
             has_z="ENABLED" if desc.hasZ else "DISABLED",
             spatial_reference=desc.spatialReference,
-            out_alias=output_name  # Set alias to match output name
+            out_alias=output_name
         )
         
-        # Copy fields from input (except OID and Shape)
+        # Copy fields from input (except OID and Shape), always nullable
         input_fields = arcpy.ListFields(input_fc)
         for field in input_fields:
             if field.type not in ['OID', 'Geometry']:
@@ -1295,27 +1286,38 @@ class SkyStratDownplungeView(object):
                     field_scale=field.scale,
                     field_length=field.length,
                     field_alias=field.aliasName,
-                    field_is_nullable="NULLABLE"  # Always nullable to handle Null values in source data
+                    field_is_nullable="NULLABLE"
                 )
         
-        # Copy data from input to output
+        # If label is OID, add a field to preserve original OID values for matching
+        if label_is_oid:
+            arcpy.management.AddField(output_fc, 'orig_oid', 'LONG',
+                                     field_alias='Original Object ID')
+        
+        # Copy data
         arcpy.AddMessage(f"  Copying data from input feature class...")
         field_names = [f.name for f in input_fields if f.type not in ['OID', 'Geometry']]
-        field_names.insert(0, 'SHAPE@')
         
-        with arcpy.da.SearchCursor(input_fc, field_names) as search_cursor:
-            with arcpy.da.InsertCursor(output_fc, field_names) as insert_cursor:
+        if label_is_oid:
+            search_fields = ['SHAPE@', 'OID@'] + field_names
+            insert_fields = ['SHAPE@', 'orig_oid'] + field_names
+        else:
+            search_fields = ['SHAPE@'] + field_names
+            insert_fields = ['SHAPE@'] + field_names
+        
+        with arcpy.da.SearchCursor(input_fc, search_fields) as search_cursor:
+            with arcpy.da.InsertCursor(output_fc, insert_fields) as insert_cursor:
                 for row in search_cursor:
                     insert_cursor.insertRow(row)
         
         arcpy.AddMessage(f"  Data copied successfully")
         
-        # Add the strat_height_out field
-        arcpy.AddMessage(f"  Adding 'strat_height_out' field...")
-        arcpy.management.AddField(output_fc, 'strat_height_out', 'DOUBLE', 
+        # Add strat_ht field (8 chars for shapefile compatibility)
+        arcpy.AddMessage(f"  Adding 'strat_ht' field...")
+        arcpy.management.AddField(output_fc, 'strat_ht', 'DOUBLE',
                                  field_alias='Calculated Stratigraphic Height')
         
-        # Update the field with calculated values
+        # Build label-to-height mapping
         calculated_heights = strike_dip_data.get('calculated_strat_height', [])
         labels = strike_dip_data['labels']
         
@@ -1325,29 +1327,30 @@ class SkyStratDownplungeView(object):
         arcpy.AddMessage(f"  Sample heights: {[h for h in calculated_heights[:3] if h is not None]}")
         arcpy.AddMessage(f"  Using label field: {label_field}")
         
-        # Create a mapping from label to calculated height
         label_to_height = {}
         for i, label in enumerate(labels):
             if i < len(calculated_heights) and calculated_heights[i] is not None:
                 label_to_height[str(label)] = calculated_heights[i]
-                if i < 3:  # Only show first 3 for debugging
+                if i < 3:
                     arcpy.AddMessage(f"  Mapping: label '{label}' -> height {calculated_heights[i]:.2f}")
         
         arcpy.AddMessage(f"  Created mapping for {len(label_to_height)} features with heights")
         
-        # Update features using the actual label field
+        # Use orig_oid for matching if label was OID, otherwise use label field directly
+        match_field = 'orig_oid' if label_is_oid else label_field
+        if label_is_oid:
+            arcpy.AddMessage(f"  Matching via preserved original OID field")
+        
         update_count = 0
-        with arcpy.da.UpdateCursor(output_fc, [label_field, 'strat_height_out']) as cursor:
+        with arcpy.da.UpdateCursor(output_fc, [match_field, 'strat_ht']) as cursor:
             for row in cursor:
-                label_value = row[0]
-                label_str = str(label_value)
-                
+                label_str = str(row[0])
                 if label_str in label_to_height:
                     row[1] = label_to_height[label_str]
                     cursor.updateRow(row)
                     update_count += 1
                     if update_count <= 3:
-                        arcpy.AddMessage(f"  Updated feature with label '{label_value}' -> height {label_to_height[label_str]:.2f}")
+                        arcpy.AddMessage(f"  Updated feature with label '{row[0]}' -> height {label_to_height[label_str]:.2f}")
         
         arcpy.AddMessage(f"  Updated {update_count} features with calculated heights")
     
@@ -1421,8 +1424,16 @@ class SkyStratDownplungeView(object):
         # Set spatial reference
         arcpy.management.DefineProjection(strat_raster, dem_desc.spatialReference)
         
-        # Save the raster
-        strat_raster.save(output_path)
+        # Report actual range of values being written (excluding nodata)
+        valid_vals = strat_array[strat_array != -9999]
+        if len(valid_vals) > 0:
+            arcpy.AddMessage(f"  Strat height raster value range: {valid_vals.min():.2f} to {valid_vals.max():.2f} m")
+        
+        # Save using CopyRaster to avoid geodatabase format issues
+        import os
+        if not output_path.lower().endswith('.tif') and not output_path.lower().endswith('.tiff') and '.' not in os.path.basename(output_path):
+            output_path = output_path + '.tif'
+        arcpy.management.CopyRaster(strat_raster, output_path, format="TIFF")
 
     def create_downplunge_view(self, strike_dip_data, wedge_data, dem_cell_data, fold_trend, fold_plunge, 
                                 output_pdf, dem_raster, study_area, wedge_raster_output, 
@@ -1819,13 +1830,26 @@ class SkyStratDownplungeView(object):
                 # Plot intersection point
                 ax.plot(ix, iy, 'ko', markersize=4, zorder=2)
         
-        # Format plot with padding to ensure all points are visible
-        padding = 0.1  # 10% padding on each side
+        # Format plot - set axis limits to include both measurement points and DEM cells
+        padding = 0.1
         
-        ax.set_xlim(profile_x_coords.min() - padding * x_range, 
-                    profile_x_coords.max() + padding * x_range)
-        ax.set_ylim(profile_y_coords.min() - padding * y_range, 
-                    profile_y_coords.max() + padding * y_range)
+        x_min = profile_x_coords.min()
+        x_max = profile_x_coords.max()
+        y_min = profile_y_coords.min()
+        y_max = profile_y_coords.max()
+        
+        # Expand limits to include DEM cells if they were plotted
+        if dem_profile_x is not None and dem_profile_y is not None and plot_dem_cells:
+            x_min = min(x_min, dem_profile_x.min())
+            x_max = max(x_max, dem_profile_x.max())
+            y_min = min(y_min, dem_profile_y.min())
+            y_max = max(y_max, dem_profile_y.max())
+        
+        x_range_plot = x_max - x_min
+        y_range_plot = y_max - y_min
+        
+        ax.set_xlim(x_min - padding * x_range_plot, x_max + padding * x_range_plot)
+        ax.set_ylim(y_min - padding * y_range_plot, y_max + padding * y_range_plot)
         
         ax.set_xlabel('Profile Distance (m)', fontsize=12)
         ax.set_ylabel('Vertical Distance (m)', fontsize=12)
