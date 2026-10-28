@@ -81,6 +81,9 @@ If you are encountering problems that you think are in error, you may have found
 + The ArcGIS version of the code sometimes encounters bugs if the `Label Field (for point identification)` is set to a field that either (a) has repeated values or (b) is OBJECTID. We recommend using a field other than OBJECTID as the Label Field. Values that have no repeats such as (probably) latitude or longitude or (possibly) strike or dip are good to use for the Label Field.
 + The ArcGIS version of the code encounters problems writing output shapefiles. To output the strike/dip measurements with stratigraphic height (the only vector dataset output by the code), outputting to a geodatabase feature class, rather than a shapefile, is recommended.
 
+## Common problems
++The tool will fail if run while there are pending edits. All edits must be saved before running.
+
 ### Windows symlink
 
 cmd prompt (run as Admin):
