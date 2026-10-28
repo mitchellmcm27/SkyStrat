@@ -82,7 +82,7 @@ If you are encountering problems that you think are in error, you may have found
 + The ArcGIS version of the code encounters problems writing output shapefiles. To output the strike/dip measurements with stratigraphic height (the only vector dataset output by the code), outputting to a geodatabase feature class, rather than a shapefile, is recommended.
 
 ## Common problems
-+The tool will fail if run while there are pending edits. All edits must be saved before running.
++ The tool will fail if run while there are pending edits. All edits must be saved before running.
 
 ### Windows symlink
 
