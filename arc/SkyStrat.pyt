@@ -375,11 +375,13 @@ class SkyStratDownplungeView(object):
                 data['dip'].append(row[dip_index])
                 data['labels'].append(str(row[label_index]))
                 
+                # Check overturned flag
                 if overturned_field:
                     data['overturned'].append(1 if row[overturned_index] == 1 else 0)
                 else:
                     data['overturned'].append(0)
                 
+                # Get stratigraphic height if field provided
                 if strat_height_field:
                     data['strat_height'].append(row[strat_height_index])
                 else:
@@ -502,17 +504,24 @@ class SkyStratDownplungeView(object):
         fold_axis = np.array([
             np.cos(plunge_rad) * np.sin(trend_rad),  # x (East)
             np.cos(plunge_rad) * np.cos(trend_rad),  # y (North)
-            np.sin(plunge_rad)                        # z (Up)
+            -np.sin(plunge_rad)                        # z (Down)
         ])
-        
+
+        arcpy.AddMessage(f"Function calculate_projected_attitudes")
+
+        arcpy.AddMessage(f"  fold_trend: {fold_trend}")
+        arcpy.AddMessage(f"  fold_plunge: {fold_plunge}")
         # Define profile plane basis vectors
         vertical = np.array([0, 0, 1])
         v_parallel = np.dot(vertical, fold_axis) * fold_axis
         profile_y = vertical - v_parallel
         profile_y = profile_y / np.linalg.norm(profile_y)
+        arcpy.AddMessage(f"  fold_axis: {fold_axis}")
+        arcpy.AddMessage(f"  profile_y: {profile_y}")
         
         profile_x = np.cross(profile_y, fold_axis)
         profile_x = profile_x / np.linalg.norm(profile_x)
+        arcpy.AddMessage(f"  profile_x: {profile_x}")
         
         # Project measurement points onto profile plane
         points_3d = np.column_stack([
@@ -536,6 +545,10 @@ class SkyStratDownplungeView(object):
             strike = strikes[i]
             dip = dips[i]
             is_overturned = overturned[i]
+
+            arcpy.AddMessage(f"  strike: {strike}")
+            arcpy.AddMessage(f"  dip: {dip}")
+            arcpy.AddMessage(f"  is_overturned: {is_overturned}")
             
             # Convert to radians
             strike_rad = np.radians(strike)
@@ -544,6 +557,8 @@ class SkyStratDownplungeView(object):
             # Calculate pole to bedding (right-hand rule)
             pole_trend = strike + 90
             pole_plunge = 90 - dip
+            arcpy.AddMessage(f"  pole_trend: {pole_trend}")
+            arcpy.AddMessage(f"  pole_plunge: {pole_plunge}")
             
             # If overturned, flip the pole
             if is_overturned:
@@ -551,6 +566,7 @@ class SkyStratDownplungeView(object):
                 pole_plunge = -pole_plunge
             
             pole_trend = pole_trend % 360
+            arcpy.AddMessage(f"  pole_trend: {pole_trend}")
             pole_trend_rad = np.radians(pole_trend)
             pole_plunge_rad = np.radians(pole_plunge)
             
@@ -560,12 +576,20 @@ class SkyStratDownplungeView(object):
                 np.cos(pole_plunge_rad) * np.cos(pole_trend_rad),
                 np.sin(pole_plunge_rad)
             ])
+            arcpy.AddMessage(f"  pole: {pole}")
+            arcpy.AddMessage(f"  fold_axis: {fold_axis}")
             
+
             # The bedding plane has normal vector = pole
             # The profile plane has normal vector = fold_axis
             # The intersection line is perpendicular to both normals
             intersection_3d = np.cross(pole, fold_axis)
-            
+            arcpy.AddMessage(f"  intersection_3d: {intersection_3d}")
+            arcpy.AddMessage(f"  OLD intersection_3d: {np.cross(pole, fold_axis)}")
+            #plotting the vector and plane output from the script (as displayed in Arc) in my new
+            #MATLAB vector plotting script shows that intersection_3d is now the correct vector of
+            #the bed with the profile plane
+
             # Normalize
             if np.linalg.norm(intersection_3d) > 1e-10:
                 intersection_3d = intersection_3d / np.linalg.norm(intersection_3d)
@@ -576,6 +600,8 @@ class SkyStratDownplungeView(object):
             # Project intersection line onto profile plane coordinates
             intersection_x = np.dot(intersection_3d, profile_x)
             intersection_y = np.dot(intersection_3d, profile_y)
+            arcpy.AddMessage(f"  intersection_x: {intersection_x}")
+            arcpy.AddMessage(f"  intersection_y: {intersection_y}")
             
             # Store as unit vector in profile plane
             norm = np.sqrt(intersection_x**2 + intersection_y**2)
@@ -1453,24 +1479,30 @@ class SkyStratDownplungeView(object):
             np.cos(plunge_rad) * np.cos(trend_rad),  # y (North component)
             -np.sin(plunge_rad)                       # z (Down, negative for plunge)
         ])
-        
+
+        arcpy.AddMessage(f"  fold_trend: {fold_trend}")
+        arcpy.AddMessage(f"  fold_plunge: {fold_plunge}")
         # For down-plunge view:
         # - Fold axis points in the viewing direction (into the page/screen)
         # - Profile y-axis points upward in the view
         # - Profile x-axis points to the right in the view
         
         vertical = np.array([0, 0, 1])
+        arcpy.AddMessage(f"Function create_downplunge_view")
         
         # Project vertical onto profile plane (remove component parallel to fold axis)
         # This gives us the "up" direction in the profile view
         v_parallel = np.dot(vertical, fold_axis) * fold_axis
         profile_y = vertical - v_parallel
         profile_y = profile_y / np.linalg.norm(profile_y)
+        arcpy.AddMessage(f"  fold_axis: {fold_axis}")
+        arcpy.AddMessage(f"  profile_y: {profile_y}")
         
         # Profile x-axis: cross product to get "right" direction
         # Use profile_y × fold_axis to get right-hand direction
         profile_x = np.cross(profile_y, fold_axis)
         profile_x = profile_x / np.linalg.norm(profile_x)
+        arcpy.AddMessage(f"  profile_x: {profile_x}")
         
         # Project measurement points onto profile plane
         points_3d = np.column_stack([
@@ -1830,26 +1862,13 @@ class SkyStratDownplungeView(object):
                 # Plot intersection point
                 ax.plot(ix, iy, 'ko', markersize=4, zorder=2)
         
-        # Format plot - set axis limits to include both measurement points and DEM cells
-        padding = 0.1
+        # Format plot with padding to ensure all points are visible
+        padding = 0.1  # 10% padding on each side
         
-        x_min = profile_x_coords.min()
-        x_max = profile_x_coords.max()
-        y_min = profile_y_coords.min()
-        y_max = profile_y_coords.max()
-        
-        # Expand limits to include DEM cells if they were plotted
-        if dem_profile_x is not None and dem_profile_y is not None and plot_dem_cells:
-            x_min = min(x_min, dem_profile_x.min())
-            x_max = max(x_max, dem_profile_x.max())
-            y_min = min(y_min, dem_profile_y.min())
-            y_max = max(y_max, dem_profile_y.max())
-        
-        x_range_plot = x_max - x_min
-        y_range_plot = y_max - y_min
-        
-        ax.set_xlim(x_min - padding * x_range_plot, x_max + padding * x_range_plot)
-        ax.set_ylim(y_min - padding * y_range_plot, y_max + padding * y_range_plot)
+        ax.set_xlim(profile_x_coords.min() - padding * x_range, 
+                    profile_x_coords.max() + padding * x_range)
+        ax.set_ylim(profile_y_coords.min() - padding * y_range, 
+                    profile_y_coords.max() + padding * y_range)
         
         ax.set_xlabel('Profile Distance (m)', fontsize=12)
         ax.set_ylabel('Vertical Distance (m)', fontsize=12)
